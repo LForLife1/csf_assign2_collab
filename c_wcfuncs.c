@@ -55,13 +55,13 @@ void wc_str_copy(unsigned char *dest, const unsigned char *source) {
 //   '\f'
 //   '\v'
 int wc_isspace(unsigned char c) {
-  return (c == 32 || c == 9 || c == 13 || c == 10 || c == 12 || c == 11);
+  return (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v');
 }
 
 // Return 1 if the character code in c is an alphabetic character
 // ('A' through 'Z' or 'a' through 'z'), 0 otherwise.
 int wc_isalpha(unsigned char c) {
-  return ((c >= 65 && c <= 90) || c >= 97 && c <= 122);
+  return ((c >= 'A' && c <= 'Z') || c >= 'a' && c <= 'z');
 }
 
 // Read the next word from given input stream, storing
@@ -82,7 +82,13 @@ int wc_readnext(FILE *in, unsigned char *w) {
 // Convert the NUL-terminated character string in the array
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w) {
-  // TODO: implement
+  if (w == NULL) { return; }
+  while (*w != '\0') { //null terminated
+    if (wc_isalpha(*w) && (*w >= 'A' && *w <= 'Z')) {
+      *w = *w + 32; //add 32 to make lowercase
+    }
+    w++; //next character in string
+  }
 }
 
 // Remove any non-alphaabetic characters from the end of the
