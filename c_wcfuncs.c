@@ -61,7 +61,7 @@ int wc_isspace(unsigned char c) {
 // Return 1 if the character code in c is an alphabetic character
 // ('A' through 'Z' or 'a' through 'z'), 0 otherwise.
 int wc_isalpha(unsigned char c) {
-  return ((c >= 'A' && c <= 'Z') || c >= 'a' && c <= 'z');
+  return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 }
 
 // Read the next word from given input stream, storing
@@ -94,7 +94,10 @@ void wc_tolower(unsigned char *w) {
 // Remove any non-alphaabetic characters from the end of the
 // NUL-terminated character string pointed-to by w.
 void wc_trim_non_alpha(unsigned char *w) {
-  // TODO: implement
+  if (w == NULL || *w == '\0') { return; }
+  while (*w != '\0') { w++; }         //at this point w points to null character, backtrack to first alpha
+  while (!wc_isalpha(*w)) { w--; }    //w points to last alpha character
+  *(w+1) = '\0';
 }
 
 // Search the specified linked list of WordEntry objects for an object
