@@ -21,7 +21,13 @@
 // Note that the character values should be treated as
 // being unsigned (in the range 0..255)
 uint32_t wc_hash(const unsigned char *w) {
-  // TODO: implement
+  uint32_t hash_code = 5381;
+  while (*w != '\0') 
+  { 
+    hash_code = hash_code * 33 + *w;
+    w++;
+  }
+  return hash_code;  
 }
 
 // Compare two strings lexicographically. Return
@@ -40,7 +46,13 @@ int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs) {
 
 // Copy NUL-terminated source string to the destination buffer.
 void wc_str_copy(unsigned char *dest, const unsigned char *source) {
-  // TODO: implement
+  if (source == NULL) { return; }
+  while (*source != '\0') {
+    *dest = *source;
+    source++;
+    dest++;
+  }
+  *dest = '\0';
 }
 
 // Return 1 if the character code in c is a whitespace character,
