@@ -229,7 +229,38 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
 // which represents s.
 struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s)
 {
-  // TODO: implement
+  if (buckets == NULL) {
+    return 0; // given dictionary does not exist
+  }
+
+  uint32_t index = wc_hash(s) % num_buckets;
+
+  // go to correct index
+  if (buckets[index] == NULL) {
+    // if index is unoccupied, create head node
+    buckets[index] = malloc(sizeof(struct WordEntry));
+    wc_str_copy(buckets[index]->word, s);
+    return buckets[index];
+  } else {
+    // if already exists...
+    struct WordEntry* current_node = buckets[index];
+    while (current_node != NULL) {
+      if (wc_str_compare(current_node->word, s) == 0) {
+        // current_node->count++;
+        return current_node;
+      }
+      current_node = current_node->next;
+    }
+
+    // prepend and set default values
+    struct WordEntry* temp = buckets[index];
+    buckets[index] = malloc(sizeof(struct WordEntry));
+    wc_str_copy(buckets[index]->word, s);
+    buckets[index]->next = temp;
+    return buckets[index];
+  }
+
+  return buckets[index];
 }
 
 // Free all of the nodes in given linked list of WordEntry objects.
