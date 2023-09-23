@@ -246,7 +246,6 @@ struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned n
     struct WordEntry* current_node = buckets[index];
     while (current_node != NULL) {
       if (wc_str_compare(current_node->word, s) == 0) {
-        // current_node->count++;
         return current_node;
       }
       current_node = current_node->next;
