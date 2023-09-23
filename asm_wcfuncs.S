@@ -89,8 +89,34 @@ wc_str_copy:
  */
 	.globl wc_isspace
 wc_isspace:
-	/* TODO: implement */
-	ret
+
+    cmp %al, 32 // Compare c to ' '
+    je is_space // Move if equal
+
+    cmp %al, 9   // Compare c to '\t'
+    je is_space  // Move if equal
+
+    cmp %al, 13  // Compare c to '\r' 
+    je is_space  // Move if equal
+
+    cmp %al, 10  // Compare c to '\n'
+    je is_space  // Move if equal
+
+    cmp %al, 12  // Compare c to '\f'
+    je is_space  // Move if equal
+
+    cmp %al, 11  //Compare c to '\v'
+    je is_space  // Move if equal
+
+not_space:
+    //If c is not a whitespace character, set return value to 0
+	mov %eax, 0  //move 0 value to int sized return register
+    ret			 //return
+
+is_space:
+    //If c is a whitespace character, set return value to 1
+	mov %eax, 1	 //move 1 value to int sized return register
+    ret			 //return
 
 /*
  * Return 1 if the character code in c is an alphabetic character
@@ -101,7 +127,7 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	/* TODO: implement */
+	
 	ret
 
 /*
