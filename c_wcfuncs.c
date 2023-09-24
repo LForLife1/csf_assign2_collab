@@ -62,7 +62,7 @@ void wc_str_copy(unsigned char *dest, const unsigned char *source)
 {
   if (source == NULL) { return; }
   int numCopied = 0;
-  while (*source != '\0' && numCopied < MAX_WORDLEN)
+  while (*source != '\0' && numCopied < MAX_WORDLEN) //building MAX_WORDLEN safeguard in
   {
     *dest = *source;
     source++;
