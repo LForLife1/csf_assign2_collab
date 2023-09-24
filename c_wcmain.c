@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   // stats (to be printed at end)
   uint32_t total_words = 0;
   uint32_t unique_words = 0;
-  const unsigned char *best_word = (const unsigned char *) "";
+  unsigned char *best_word = (unsigned char *) malloc(MAX_WORDLEN + 1);
   uint32_t best_word_count = 0;
 
   // get input file from argv
@@ -46,10 +46,12 @@ int main(int argc, char **argv) {
     }
     entry->count++;           //either way, increment the count of that word
 
-    if (entry->count > best_word_count || wc_str_compare(word, best_word) < 0) //update most frequent word if necessary
-    {
-      best_word = word;
-      best_word_count = entry->count;
+    if (entry->count >= best_word_count) { //update most frequent word if necessary
+      if (entry->count > best_word_count || wc_str_compare(word, best_word) < 0) 
+      {
+        wc_str_copy(best_word, entry->word);
+        best_word_count = entry->count;
+      }
     }
     
   }  
@@ -59,6 +61,7 @@ int main(int argc, char **argv) {
   printf("Most frequent word: %s (%u)\n", (const char *) best_word, best_word_count);
 
   fclose(file);                                     // close file
+  free(best_word);
   free_hashtable(words_hashtable, HASHTABLE_SIZE);  // free memory
 
   return 0;
