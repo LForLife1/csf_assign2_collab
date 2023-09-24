@@ -170,8 +170,13 @@ void wc_trim_non_alpha(unsigned char *w)
   while (w < end && !wc_isalpha(*end))
   {
     end--;
-  } // w points to last alpha character
-  *(end + 1) = '\0';
+  }
+  if (wc_isalpha(*end))
+  {
+    *(end + 1) = '\0';
+  } else {
+    *end = '\0';
+  }
 }
 
 // Search the specified linked list of WordEntry objects for an object
@@ -230,35 +235,15 @@ struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned n
 
   uint32_t index = wc_hash(s) % num_buckets;
 
-  // go to correct index
-  if (buckets[index] == NULL) {
-    // if index is unoccupied, create head node
-    buckets[index] = malloc(sizeof(struct WordEntry));
-    wc_str_copy(buckets[index]->word, s);
-    buckets[index]->count = 0;
-    buckets[index]->next = NULL;
-    return buckets[index];
-
-  } else {
-    // if already exists...
-    struct WordEntry* current_node = buckets[index];
-    while (current_node != NULL) {
-      if (wc_str_compare(current_node->word, s) == 0) {
-        return current_node;
-      }
-      current_node = current_node->next;
-    }
-
-    // prepend and set default values
-    struct WordEntry* temp = buckets[index];
-    buckets[index] = malloc(sizeof(struct WordEntry));
-    wc_str_copy(buckets[index]->word, s);
-    buckets[index]->count = 0;
-    buckets[index]->next = temp;
-    return buckets[index];
+  int inserted;
+  struct WordEntry *word = wc_find_or_insert(buckets[index], s, &inserted);
+      
+  // If a new node was inserted, update the buckets array element
+  if (inserted) {
+    buckets[index] = word;
   }
 
-  return buckets[index];
+  return word;
 }
 
 // Free all of the nodes in given linked list of WordEntry objects.
