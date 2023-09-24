@@ -51,7 +51,8 @@ int main(int argc, char **argv) {
   } else if (argc == 1) {
     file = stdin;
   } else {
-    fprintf(stderr, "Wrong number of arguments.");
+    fprintf(stderr, "Wrong number of arguments.\n");
+    return 1;
   }
 
   struct WordEntry* words_hashtable[HASHTABLE_SIZE]; //hashtable of words

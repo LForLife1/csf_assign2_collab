@@ -60,7 +60,7 @@ int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs)
 // Copy NUL-terminated source string to the destination buffer.
 void wc_str_copy(unsigned char *dest, const unsigned char *source)
 {
-  if (source == NULL) { return; }
+  if (source == NULL || dest == NULL) { return; }
   int numCopied = 0;
   while (*source != '\0' && numCopied < MAX_WORDLEN) //building MAX_WORDLEN safeguard in
   {

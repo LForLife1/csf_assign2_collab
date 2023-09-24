@@ -112,9 +112,9 @@ wc_isspace:
 	ret			 	/* return */
 
 	.Lis_space:
-		/* If c is a whitespace character... */
-		movl $1, %eax	/* move 1 value to int sized return register */
-		ret			 	/* return */
+	/* If c is a whitespace character... */
+	movl $1, %eax	/* move 1 value to int sized return register */
+	ret			 	/* return */
 
 /*
  * Return 1 if the character code in c is an alphabetic character
