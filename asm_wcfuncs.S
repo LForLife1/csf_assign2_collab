@@ -125,22 +125,22 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	cmp $65, %rdi 				/* compare to A */
-	jle .LoutOfCapitalRange 	/* if it's greater than or equal to A... */
+	cmp $65, %rdi 			/* compare to A */
+	jl .LoutOfCapitalRange 	/* if it's greater than or equal to A... */
 		cmp $90, %rdi 				/* compare to Z */
-		jge .LoutOfCapitalRange		/* if it's less than or equal to Z... */
+		jg .LoutOfCapitalRange		/* if it's less than or equal to Z... */
 			jmp .LisValid				/* it is valid */
 
-	.LoutOfCapitalRange: 		/* if it's not between A and Z, check between a and z*/
-	cmp $97, %rdi				/* compare to a */
-	jle .LisNotValid			/* if it's greater than or equal to a... */
-		cmp $122, %rdi				/* compare to z */
-		jge .LisNotValid			/* if it's less than or equal to z... */
-			jmp .LisValid				/* it is valid */
+	.LoutOfCapitalRange: 	/* if it's not between A and Z, check between a and z*/
+		cmp $97, %rdi			/* compare to a */
+		jl .LisNotValid			/* if it's greater than or equal to a... */
+			cmp $122, %rdi				/* compare to z */
+			jg .LisNotValid			/* if it's less than or equal to z... */
+				jmp .LisValid				/* it is valid */
 
 	.LisNotValid:
-	movl $0, %eax	/* return false */
-	ret
+		movl $0, %eax			/* return false */
+		ret
 
 	.LisValid:
 	movl $1, %eax 	/* return true */
