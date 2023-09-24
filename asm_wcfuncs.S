@@ -89,34 +89,32 @@ wc_str_copy:
  */
 	.globl wc_isspace
 wc_isspace:
+    cmpq $32, %rdi 		/* Compare c to ' ' */
+    je .Lis_space 		/* Jump if equal */
 
-    cmp %al, 32 // Compare c to ' '
-    je is_space // Move if equal
+    cmpq $9 , %rdi  	/* Compare c to '\t' */
+    je .Lis_space  		/* Jump if equal */
 
-    cmp %al, 9   // Compare c to '\t'
-    je is_space  // Move if equal
+    cmpq $13, %rdi  	/* Compare c to '\r' */ 
+    je .Lis_space  		/* Jump if equal */
 
-    cmp %al, 13  // Compare c to '\r' 
-    je is_space  // Move if equal
+    cmpq $10, %rdi  	/* Compare c to '\n' */
+    je .Lis_space  		/* Jump if equal */
 
-    cmp %al, 10  // Compare c to '\n'
-    je is_space  // Move if equal
+    cmpq $12, %rdi  	/* Compare c to '\f' */
+    je .Lis_space  		/* Jump if equal */
 
-    cmp %al, 12  // Compare c to '\f'
-    je is_space  // Move if equal
+    cmpq $11, %rdi  	/* Compare c to '\v' */
+    je .Lis_space  		/* Jump if equal */
 
-    cmp %al, 11  //Compare c to '\v'
-    je is_space  // Move if equal
+	/* If c is not a whitespace character... */
+	movl $0, %eax  	/* move 0 value to int sized return register */
+	ret			 	/* return */
 
-not_space:
-    //If c is not a whitespace character, set return value to 0
-	mov %eax, 0  //move 0 value to int sized return register
-    ret			 //return
-
-is_space:
-    //If c is a whitespace character, set return value to 1
-	mov %eax, 1	 //move 1 value to int sized return register
-    ret			 //return
+	.Lis_space:
+		/* If c is a whitespace character... */
+		movl $1, %eax	/* move 1 value to int sized return register */
+		ret			 	/* return */
 
 /*
  * Return 1 if the character code in c is an alphabetic character
@@ -127,7 +125,25 @@ is_space:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	
+	cmp $65, %rdi 				/* compare to A */
+	jle .LoutOfCapitalRange 	/* if it's greater than or equal to A... */
+		cmp $90, %rdi 				/* compare to Z */
+		jge .LoutOfCapitalRange		/* if it's less than or equal to Z... */
+			jmp .LisValid				/* it is valid */
+
+	.LoutOfCapitalRange: 		/* if it's not between A and Z, check between a and z*/
+	cmp $97, %rdi				/* compare to a */
+	jle .LisNotValid			/* if it's greater than or equal to a... */
+		cmp $122, %rdi				/* compare to z */
+		jge .LisNotValid			/* if it's less than or equal to z... */
+			jmp .LisValid				/* it is valid */
+
+	.LisNotValid:
+	movl $0, %eax	/* return false */
+	ret
+
+	.LisValid:
+	movl $1, %eax 	/* return true */
 	ret
 
 /*
