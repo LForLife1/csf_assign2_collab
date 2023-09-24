@@ -61,15 +61,12 @@ int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs)
 void wc_str_copy(unsigned char *dest, const unsigned char *source)
 {
   if (source == NULL || dest == NULL) { return; }
-  int numCopied = 0;
-  while (*source != '\0' && numCopied < MAX_WORDLEN) //building MAX_WORDLEN safeguard in
-  {
-    *dest = *source;
-    source++;
-    dest++;
-    numCopied++;
-  }
-  *dest = '\0';
+  while (*source != '\0') {
+        *dest = *source;
+        dest++;
+        source++;
+    }
+    *dest = '\0';
 }
 
 // Return 1 if the character code in c is a whitespace character,
