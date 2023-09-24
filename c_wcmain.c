@@ -30,9 +30,13 @@ int main(int argc, char **argv) {
   // get input file from argv
   if (argc != 2) { return -1; } // incorrect number of arguments
 
-  FILE* file = fopen(argv[1], "r");
+  FILE* file = fopen(argv[1], "r"); //TODO: stderr if can't be opened
 
   struct WordEntry* words_hashtable[HASHTABLE_SIZE]; //hashtable of words
+  for (unsigned i = 0; i < HASHTABLE_SIZE; i++) {
+    words_hashtable[i] = NULL;
+  }
+
   unsigned char word[MAX_WORDLEN];
   
   while (wc_readnext(file, word)) { //while we successfully keep reading new words

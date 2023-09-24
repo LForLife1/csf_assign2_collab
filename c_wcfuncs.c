@@ -60,15 +60,14 @@ int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs)
 // Copy NUL-terminated source string to the destination buffer.
 void wc_str_copy(unsigned char *dest, const unsigned char *source)
 {
-  if (source == NULL)
-  {
-    return;
-  }
-  while (*source != '\0')
+  if (source == NULL) { return; }
+  int numCopied = 0;
+  while (*source != '\0' && numCopied < MAX_WORDLEN)
   {
     *dest = *source;
     source++;
     dest++;
+    numCopied++;
   }
   *dest = '\0';
 }
@@ -144,12 +143,9 @@ int wc_readnext(FILE *in, unsigned char *w)
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w)
 {
-  if (w == NULL)
-  {
-    return;
-  }
-  while (*w != '\0')
-  { // null terminated
+  if (w == NULL) { return; }
+  while (*w != '\0') // null terminated
+  { 
     if (wc_isalpha(*w) && (*w >= 'A' && *w <= 'Z'))
     {
       *w = *w + 32; // add 32 to make lowercase
@@ -229,9 +225,7 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
 // which represents s.
 struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s)
 {
-  if (buckets == NULL) {
-    return 0; // given dictionary does not exist
-  }
+  if (buckets == NULL) { return NULL; }
 
   uint32_t index = wc_hash(s) % num_buckets;
 
@@ -240,7 +234,10 @@ struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned n
     // if index is unoccupied, create head node
     buckets[index] = malloc(sizeof(struct WordEntry));
     wc_str_copy(buckets[index]->word, s);
+    buckets[index]->count = 0;
+    buckets[index]->next = NULL;
     return buckets[index];
+
   } else {
     // if already exists...
     struct WordEntry* current_node = buckets[index];
