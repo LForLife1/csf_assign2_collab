@@ -13,9 +13,22 @@
 // highest occurrence count) that compares as least lexicographically as the one to display when
 // the summary stats are printed. You can use the wc_str_compare function to do lexicographical comparisons of strings.
 
-//Error handling: if there is a command line argument specifying the name of an input file, but the named 
-//file can’t be opened, the program should print an error message to stderr and exit with a non-zero exit code. 
-//If the program executes successfully, it should exit with exit code zero.
+/*
+  if (argc == 2) {
+    // If there is a command line argument, try to open the specified file
+    file = fopen(argv[1], "r");
+    if (file == NULL) {
+      fprintf(stderr, "Error opening file '%s': %s\n", argv[1], strerror(errno));
+      return 1; // Unable to open file, exit with non-zero code
+    }
+  } else if (argc == 1) {
+    // If no command line argument provided, use stdin
+    file = stdin;
+  } else {
+    fprintf(stderr, "Usage: %s [<input_file>]\n", argv[0]);
+    return 1; // Incorrect number of arguments, exit with non-zero code
+  }
+*/
 
 void free_hashtable(struct WordEntry**, unsigned int);
 
@@ -27,10 +40,19 @@ int main(int argc, char **argv) {
   unsigned char *best_word = (unsigned char *) malloc(MAX_WORDLEN + 1);
   uint32_t best_word_count = 0;
 
-  // get input file from argv
-  if (argc != 2) { return -1; } // incorrect number of arguments
-
-  FILE* file = fopen(argv[1], "r"); //TODO: stderr if can't be opened
+  // correctly define input
+  FILE* file;
+  if (argc == 2) {
+    file = fopen(argv[1], "r");
+    if (file == NULL) {
+      fprintf(stderr, "Error opening file '%s'\n", argv[1]);
+      return 1;
+    }
+  } else if (argc == 1) {
+    file = stdin;
+  } else {
+    fprintf(stderr, "Wrong number of arguments.");
+  }
 
   struct WordEntry* words_hashtable[HASHTABLE_SIZE]; //hashtable of words
   for (unsigned i = 0; i < HASHTABLE_SIZE; i++) {
@@ -64,7 +86,8 @@ int main(int argc, char **argv) {
   printf("Unique words read: %u\n", (unsigned int) unique_words);
   printf("Most frequent word: %s (%u)\n", (const char *) best_word, best_word_count);
 
-  fclose(file);                                     // close file
+
+  if (file != stdin) { fclose(file); }
   free(best_word);
   free_hashtable(words_hashtable, HASHTABLE_SIZE);  // free memory
 
