@@ -162,15 +162,16 @@ void wc_trim_non_alpha(unsigned char *w)
   {
     return;
   }
-  while (*w != '\0')
+  unsigned char *end = w;
+  while (*end != '\0')
   {
-    w++;
+    end++;
   } // at this point w points to null character, backtrack to first alpha
-  while (!wc_isalpha(*w))
+  while (w < end && !wc_isalpha(*end))
   {
-    w--;
+    end--;
   } // w points to last alpha character
-  *(w + 1) = '\0';
+  *(end + 1) = '\0';
 }
 
 // Search the specified linked list of WordEntry objects for an object
@@ -252,6 +253,7 @@ struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned n
     struct WordEntry* temp = buckets[index];
     buckets[index] = malloc(sizeof(struct WordEntry));
     wc_str_copy(buckets[index]->word, s);
+    buckets[index]->count = 0;
     buckets[index]->next = temp;
     return buckets[index];
   }

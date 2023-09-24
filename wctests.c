@@ -9,6 +9,7 @@ typedef struct {
   const unsigned char *test_str_2;
   const unsigned char *test_str_3;
   const unsigned char *test_str_4;
+  const unsigned char *test_str_5;
 
   const unsigned char *test_str_1_copy;
 
@@ -68,6 +69,7 @@ TestObjs *setup(void) {
   objs->test_str_2 = (const unsigned char *) "This is A SeNtEnCe with_MiXeD cASe.";
   objs->test_str_3 = (const unsigned char *) "O_O...";
   objs->test_str_4 = (const unsigned char *) "hello, world";
+  objs->test_str_5 = (const unsigned char *) "ThisisoneincrediblylongwordthatIhopecausesnoissues.";
 
   objs->test_str_1_copy = (const unsigned char *) "hello";
 
@@ -128,6 +130,8 @@ void test_str_copy(TestObjs *objs) {
 
   wc_str_copy(buf, objs->test_str_1);
   ASSERT(0 == strcmp((const char *) objs->test_str_1, (const char *) buf));
+  wc_str_copy(buf, objs->test_str_5);
+  ASSERT(0 == strcmp((const char *) objs->test_str_5, (const char *) buf));
 }
 
 void test_isspace(TestObjs *objs) {
