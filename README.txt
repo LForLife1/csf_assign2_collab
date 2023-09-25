@@ -1,3 +1,7 @@
-Liam: Most of the C functions, some of the assembly funcitons.
+Liam: Most of the C functions.
 
-Trevor: Most of the assembly function, some of the C functions, most of C main functionality.
+Trevor: Most of the assembly functions.
+
+Together: assembly str_compare, C main function functionality, general debugging.
+
+Altogether, amazing teamwork.

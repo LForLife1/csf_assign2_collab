@@ -69,7 +69,7 @@ wc_str_compare:
 		je .LlhsEnded				/* If it is, jump to lhsended */
 
 		cmpb $0, %r13b				/* Check if rhs char (value at r13) is null */
-		je .LrhsEnded				/* If it is, jump to rhsended */
+		je .LposValue				/* Since this means rhs is longer with same prefix, return positive */
 
 		cmpb %r12b, %r13b			/* Compare the actual (value of) characters */
 		jne .LcompareChars			/* If non-zero, jump to compare */
@@ -78,26 +78,27 @@ wc_str_compare:
 		incq %rsi					/* Increment pointerval of r13 */
 		jmp .LcharsLoop				/* Jump back to top of loop */
 	
-	.LlhsEnded:					/* if lhs ends */
-		cmpb $0, %r13b			/* Check if next rhs character is null */
+	.LlhsEnded:						/* if lhs ends */
+
+		cmpb $0, %r13b				/* Check if next rhs character is null */
 		je .Lequalstrings			/* If it is, move to equal strings */
 			
-		movl $-1, %eax			/* Otherwise lhs is shorter */
+		movl $-1, %eax				/* Otherwise lhs is shorter */
 		ret
 
-	.LrhsEnded:					/* if rhs ends */
-	/* if we are here, we already know lhs is non-null so the right hand string must be longer */
+	.LposValue:						/* returning positive value */
 		movl $1, %eax				/* move 1 to return*/
 		ret
 
-	//TODO: FIX THIS
-	.LcompareChars:				/* if strings have diff chars at a place */
+	.LcompareChars:					/* if strings have diff chars at a place */
+
 		subb %r13b, %r12b			/* find the chars difference */
-		movq $0, %rax				/* move 0 to return to clear rest of register*/
-		movb %r12b, %al 			/* mov value of diff to return */
+		jns .LposValue				/* if the subtraction ticks the NEGATIVE flag then rhs > lhs */
+
+		movl $-1, %eax				/* otherwise return negative value because less than */
 		ret
 
-	.Lequalstrings:				/* if strings are the same */
+	.Lequalstrings:					/* if strings are the same */
 		movl $0, %eax				/* move 0 to return for equal strings*/
 		ret
 
@@ -118,6 +119,7 @@ wc_str_copy:
 	movq %rdi, %r13 		/* set %r13 to pointer to destination start (argument 2) */
 	
 	.LNotAtEnd:
+
 		movq (%r12), %r14
 		movq %r14, (%r13) 	/* set data at destination to the data at source */
 		incq %r12 			/* continue to next character in the string */
@@ -167,7 +169,7 @@ wc_isspace:
     cmpq $11, %rdi  	/* Compare c to '\v' */
     je .Lis_space  		/* Jump if equal */
 
-	/* If c is not a whitespace character... */
+	/* Since c is not a whitespace character... */
 	movl $0, %eax  	/* move 0 value to int sized return register */
 	ret			 	/* return */
 
@@ -185,25 +187,28 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	cmp $65, %rdi 					/* compare to A */
-	jl .LoutOfCapitalRange 			/* if it's greater than or equal to A... */
-		cmp $90, %rdi 				/* compare to Z */
-		jg .LoutOfCapitalRange		/* if it's less than or equal to Z... */
-			jmp .LisValid			/* it is valid */
+	cmp $65, %rdi 				/* compare to A */
+	jl .LoutOfCapitalRange 		/* if it's greater than or equal to A... */
+	cmp $90, %rdi 				/* compare to Z */
+	jg .LoutOfCapitalRange		/* if it's less than or equal to Z... */
+	jmp .LisValid				/* it is valid */
 
-	.LoutOfCapitalRange: 			/* if it's not between A and Z, check between a and z*/
-		cmp $97, %rdi				/* compare to a */
-		jl .LisNotValid				/* if it's greater than or equal to a... */
-			cmp $122, %rdi			/* compare to z */
-			jg .LisNotValid			/* if it's less than or equal to z... */
-				jmp .LisValid		/* it is valid */
+	.LoutOfCapitalRange:		/* if it's not between A and Z, check between a and z*/
+				
+	cmp $97, %rdi				/* compare to a */
+	jl .LisNotValid				/* if it's greater than or equal to a... */
+	cmp $122, %rdi				/* compare to z */
+	jg .LisNotValid				/* if it's less than or equal to z... */
+	jmp .LisValid				/* it is valid */
 
 	.LisNotValid:				/* if not valid */
-		movl $0, %eax			/* return false */
+
+		movl $0, %eax			/* return 0 for false */
 		ret
 
 	.LisValid:					/* if is valid */
-	movl $1, %eax 				/* return true */
+
+	movl $1, %eax 				/* return 1 for true */
 	ret
 
 /*

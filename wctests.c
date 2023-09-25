@@ -125,10 +125,12 @@ void test_hash(TestObjs *objs) {
 
 void test_str_compare(TestObjs *objs) {
   ASSERT(wc_str_compare(objs->test_str_1, objs->test_str_1) == 0);
-  ASSERT(wc_str_compare(objs->test_str_6, objs->test_str_7) < 0);
-  ASSERT(wc_str_compare(objs->test_str_7, objs->test_str_6) > 0);
+  //diff length same until then
   ASSERT(wc_str_compare(objs->test_str_1, objs->test_str_4) < 0);
   ASSERT(wc_str_compare(objs->test_str_4, objs->test_str_1) > 0);
+  //diff character
+  ASSERT(wc_str_compare(objs->test_str_6, objs->test_str_7) < 0);
+  ASSERT(wc_str_compare(objs->test_str_7, objs->test_str_6) > 0);
 }
 
 void test_str_copy(TestObjs *objs) {
