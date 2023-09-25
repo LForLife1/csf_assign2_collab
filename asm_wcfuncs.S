@@ -57,7 +57,46 @@ wc_hash:
  */
 	.globl wc_str_compare
 wc_str_compare:
-	/* TODO: implement */
+	//INPUT PARAMETERS:   lhs: Pointer to the first string
+						//rhs: Pointer to the second string
+
+	.LcharsLoop:				/* looping till finding different character */
+								// Put character from lhs into register
+								// Put character from rhs into register
+
+								//Check if lhs char is null
+	jmp .LlhsEnded				//If it is, jump to lhsended
+
+								//Check if rhs char is null
+	jmp .LrhsEnded				//If it is, jump to rhsended
+
+								//Compare the actual characters
+	jne .LcompareChars			//If non-zero, jump to compare
+
+								//Since same, increment lhs
+								//Increment rhs
+	jmp .LcharsLoop				//Jump back to top of loop
+	
+	.LlhsEnded:					/* if lhs ends */
+								//Check if next rhs character is null
+	je .Lequalstrings			//If it is, move to equal strings
+
+	movl $-1, %eax				//Otherwise lhs is shorter
+	ret
+
+	.LrhsEnded:					/* if rhs ends */
+								//if we are here, we already know lhs is non-null so
+								//the right hand string must be longer aka positive value
+	movl $1, %eax				/* move 1 to return*/
+	ret
+
+	.LcompareChars:				/* if strings have diff chars at a place */
+								//find the chars difference
+								//move that value to return
+	ret
+
+	.Lequalstrings:				/* if strings are the same */
+	movl $0, %eax				/* move 0 to return for equal strings*/
 	ret
 
 /*
@@ -125,25 +164,25 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	cmp $65, %rdi 			/* compare to A */
-	jl .LoutOfCapitalRange 	/* if it's greater than or equal to A... */
+	cmp $65, %rdi 					/* compare to A */
+	jl .LoutOfCapitalRange 			/* if it's greater than or equal to A... */
 		cmp $90, %rdi 				/* compare to Z */
 		jg .LoutOfCapitalRange		/* if it's less than or equal to Z... */
-			jmp .LisValid				/* it is valid */
+			jmp .LisValid			/* it is valid */
 
-	.LoutOfCapitalRange: 	/* if it's not between A and Z, check between a and z*/
-		cmp $97, %rdi			/* compare to a */
-		jl .LisNotValid			/* if it's greater than or equal to a... */
-			cmp $122, %rdi				/* compare to z */
+	.LoutOfCapitalRange: 			/* if it's not between A and Z, check between a and z*/
+		cmp $97, %rdi				/* compare to a */
+		jl .LisNotValid				/* if it's greater than or equal to a... */
+			cmp $122, %rdi			/* compare to z */
 			jg .LisNotValid			/* if it's less than or equal to z... */
-				jmp .LisValid				/* it is valid */
+				jmp .LisValid		/* it is valid */
 
-	.LisNotValid:
+	.LisNotValid:				/* if not valid */
 		movl $0, %eax			/* return false */
 		ret
 
-	.LisValid:
-	movl $1, %eax 	/* return true */
+	.LisValid:					/* if is valid */
+	movl $1, %eax 				/* return true */
 	ret
 
 /*
