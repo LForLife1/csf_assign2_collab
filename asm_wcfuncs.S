@@ -60,42 +60,44 @@ wc_str_compare:
 	/* INPUT PARAMETERS:   	lhs: Pointer to the first string into %rdi
 							rhs: Pointer to da second string into %rsi */
 
-	movq %rdi, %r12 			/* Put character from lhs into register */
-	movq %rsi, %r13				/* Put character from rhs into register */
-
 	.LcharsLoop:				/* looping until finding different character */
-		cmpb $0x00, %r12b			/* Check if lhs char (value at r12) is null */
+
+		movb (%rdi), %r12b			/* Put character from lhs into register */
+    	movb (%rsi), %r13b			/* Put character from rhs into register */
+
+		cmpb $0, %r12b				/* Check if lhs char is null */
 		je .LlhsEnded				/* If it is, jump to lhsended */
 
-		cmpb $0x00, %r13b			/* Check if rhs char (value at r13) is null */
+		cmpb $0, %r13b				/* Check if rhs char (value at r13) is null */
 		je .LrhsEnded				/* If it is, jump to rhsended */
 
 		cmpb %r12b, %r13b			/* Compare the actual (value of) characters */
 		jne .LcompareChars			/* If non-zero, jump to compare */
 
-		incq (%r12)					/* Since same, increment pointerval of r12 */
-		incq (%r13)					/* Increment pointerval of r13 */
+		incq %rdi					/* Since same, increment pointerval of r12 */
+		incq %rsi					/* Increment pointerval of r13 */
 		jmp .LcharsLoop				/* Jump back to top of loop */
 	
 	.LlhsEnded:					/* if lhs ends */
-		cmpb $0x00, %r13b			/* Check if next rhs character is null */
-		jne .Lequalstrings			/* If it is, move to equal strings */
-			movl $-1, %eax			/* Otherwise lhs is shorter */
-			ret
+		cmpb $0, %r13b			/* Check if next rhs character is null */
+		je .Lequalstrings			/* If it is, move to equal strings */
+			
+		movl $-1, %eax			/* Otherwise lhs is shorter */
+		ret
 
 	.LrhsEnded:					/* if rhs ends */
 	/* if we are here, we already know lhs is non-null so the right hand string must be longer */
-	movl $1, %eax				/* move 1 to return*/
-	ret
+		movl $1, %eax				/* move 1 to return*/
+		ret
 
 	.LcompareChars:				/* if strings have diff chars at a place */
-	subq %r12, %r13				/* find the chars difference */
-	movq %r12, %rax 			/* move that value to return */
-	ret
+		subq %rdi, %rsi				/* find the chars difference */
+		movq %rdi, %rax 			/* move that value to return */
+		ret
 
 	.Lequalstrings:				/* if strings are the same */
-	movl $0, %eax				/* move 0 to return for equal strings*/
-	ret
+		movl $0, %eax				/* move 0 to return for equal strings*/
+		ret
 
 /*
  * Copy NUL-terminated source string to the destination buffer.
