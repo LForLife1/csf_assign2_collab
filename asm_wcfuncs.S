@@ -90,9 +90,11 @@ wc_str_compare:
 		movl $1, %eax				/* move 1 to return*/
 		ret
 
+	//TODO: FIX THIS
 	.LcompareChars:				/* if strings have diff chars at a place */
-		subq %rdi, %rsi				/* find the chars difference */
-		movq %rdi, %rax 			/* move that value to return */
+		subb %r13b, %r12b			/* find the chars difference */
+		movq $0, %rax				/* move 0 to return to clear rest of register*/
+		movb %r12b, %al 			/* mov value of diff to return */
 		ret
 
 	.Lequalstrings:				/* if strings are the same */

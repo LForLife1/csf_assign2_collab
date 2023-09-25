@@ -10,6 +10,8 @@ typedef struct {
   const unsigned char *test_str_3;
   const unsigned char *test_str_4;
   const unsigned char *test_str_5;
+  const unsigned char *test_str_6;
+  const unsigned char *test_str_7;
 
   const unsigned char *test_str_1_copy;
 
@@ -70,6 +72,8 @@ TestObjs *setup(void) {
   objs->test_str_3 = (const unsigned char *) "O_O...";
   objs->test_str_4 = (const unsigned char *) "hello, world";
   objs->test_str_5 = (const unsigned char *) "ThisisoneincrediblylongwordthatIhopecausesnoissues.";
+  objs->test_str_6 = (const unsigned char *) "alphabet.";
+  objs->test_str_7 = (const unsigned char *) "baboon.";
 
   objs->test_str_1_copy = (const unsigned char *) "hello";
 
@@ -121,6 +125,8 @@ void test_hash(TestObjs *objs) {
 
 void test_str_compare(TestObjs *objs) {
   ASSERT(wc_str_compare(objs->test_str_1, objs->test_str_1) == 0);
+  ASSERT(wc_str_compare(objs->test_str_6, objs->test_str_7) < 0);
+  ASSERT(wc_str_compare(objs->test_str_7, objs->test_str_6) > 0);
   ASSERT(wc_str_compare(objs->test_str_1, objs->test_str_4) < 0);
   ASSERT(wc_str_compare(objs->test_str_4, objs->test_str_1) > 0);
 }
