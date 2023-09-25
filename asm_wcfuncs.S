@@ -57,41 +57,40 @@ wc_hash:
  */
 	.globl wc_str_compare
 wc_str_compare:
-	//INPUT PARAMETERS:   lhs: Pointer to the first string into %rdi
-						//rhs: Pointer to da second string into %rsi
+	/* INPUT PARAMETERS:   	lhs: Pointer to the first string into %rdi
+							rhs: Pointer to da second string into %rsi */
 
-	.LcharsLoop:				/* looping till finding different character */
-	movb %al, %rdi 				// Put character from lhs into register
-	movb %bl, %rsi				// Put character from rhs into register
+	movq %rdi, %r12 			/* Put character from lhs into register */
+	movq %rsi, %r13				/* Put character from rhs into register */
 
-	cmp	$0, %al					//Check if lhs char is null
-	jmp .LlhsEnded				//If it is, jump to lhsended
+	.LcharsLoop:				/* looping until finding different character */
+		cmpq $0, (%r12)				/* Check if lhs char is null */
+		je .LlhsEnded				/* If it is, jump to lhsended */
 
-	cmp	$0, %bl					//Check if rhs char is null
-	jmp .LrhsEnded				//If it is, jump to rhsended
+		cmpq $0, (%r13)				/* Check if rhs char is null */
+		je .LrhsEnded				/* If it is, jump to rhsended */
 
-	cmp %al, %bl					//Compare the actual characters
-	jne .LcompareChars			//If non-zero, jump to compare
+		cmpq %r12, %r13				/* Compare the actual characters */
+		jne .LcompareChars			/* If non-zero, jump to compare */
 
-	inc %rdi					//Since same, increment lhs
-	inc %rsi					//Increment rhs
-	jmp .LcharsLoop				//Jump back to top of loop
+		incq %r12					/* Since same, increment lhs */
+		incq %r13					/* Increment rhs */
+		jmp .LcharsLoop				/* Jump back to top of loop */
 	
 	.LlhsEnded:					/* if lhs ends */
-	cmp	$0, %bl					//Check if next rhs character is null
-	je .Lequalstrings			//If it is, move to equal strings
-
-	movl $-1, %eax				//Otherwise lhs is shorter
-	ret
+		cmpq $0, %r13				/* Check if next rhs character is null */
+		jne .Lequalstrings			/* If it is, move to equal strings */
+			movl $-1, %eax			/* Otherwise lhs is shorter */
+			ret
 
 	.LrhsEnded:					/* if rhs ends */
-	//if we are here, we already know lhs is non-null so the right hand string must be longer
+	/* if we are here, we already know lhs is non-null so the right hand string must be longer */
 	movl $1, %eax				/* move 1 to return*/
 	ret
 
 	.LcompareChars:				/* if strings have diff chars at a place */
-	sub %al, %bl				//find the chars difference
-	movb %eax, %al 				//move that value to return
+	subq %r12, %r13				/* find the chars difference */
+	movq %r12, %rax 				/* move that value to return */
 	ret
 
 	.Lequalstrings:				/* if strings are the same */
@@ -106,7 +105,7 @@ wc_str_compare:
  */
 	.globl wc_str_copy
 wc_str_copy:
-							/* reserve callee saved registers */
+							/* reserve callee saved registers ****************************************** TODO: Check if necessary */
 	pushq %r12				/* pointer to source start */
 	pushq %r13				/* pointer to destination start */
 	pushq %r14				/* temporary variable for storing current character in loop*/
@@ -120,8 +119,8 @@ wc_str_copy:
 		incq %r12 			/* continue to next character in the string */
 		incq %r13			/* continue to next character in the string */
 
-		cmpq $0, (%r12)		/* if character at %r12 is not zero or NUL terminator (not at end of source string), jump to .LNotAtEnd*/
-		jne .LNotAtEnd
+		cmpq $0, (%r12)		/* if character at %r12 is not zero (NUL terminator) (not at end of source string) */
+		jne .LNotAtEnd		/* jump to .LNotAtEnd */
 
 	popq %r12
 	popq %r13
