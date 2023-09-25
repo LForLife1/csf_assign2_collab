@@ -107,7 +107,26 @@ wc_str_compare:
  */
 	.globl wc_str_copy
 wc_str_copy:
-	/* TODO: implement */
+							/* reserve callee saved registers */
+	pushq %r12				/* pointer to source start */
+	pushq %r13				/* pointer to destination start */
+	pushq %r14				/* temporary variable for storing current character in loop*/
+	
+	movq %rsi, %r12 		/* set %r12 to pointer to source start (argument 1) */
+	movq %rdi, %r13 		/* set %r13 to pointer to destination start (argument 2) */
+	
+	.LNotAtEnd:
+		movq (%r12), %r14
+		movq %r14, (%r13) 	/* set data at destination to the data at source */
+		incq %r12 			/* continue to next character in the string */
+		incq %r13			/* continue to next character in the string */
+
+		cmpq $0, (%r12)		/* if character at %r12 is not zero or NUL terminator (not at end of source string), jump to .LNotAtEnd*/
+		jne .LNotAtEnd
+
+	popq %r12
+	popq %r13
+	popq %r14
 	ret
 
 /*
