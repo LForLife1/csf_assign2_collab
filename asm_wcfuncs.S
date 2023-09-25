@@ -64,21 +64,21 @@ wc_str_compare:
 	movq %rsi, %r13				/* Put character from rhs into register */
 
 	.LcharsLoop:				/* looping until finding different character */
-		cmpq $0, (%r12)				/* Check if lhs char is null */
+		cmpb $0x00, %r12b			/* Check if lhs char (value at r12) is null */
 		je .LlhsEnded				/* If it is, jump to lhsended */
 
-		cmpq $0, (%r13)				/* Check if rhs char is null */
+		cmpb $0x00, %r13b			/* Check if rhs char (value at r13) is null */
 		je .LrhsEnded				/* If it is, jump to rhsended */
 
-		cmpq %r12, %r13				/* Compare the actual characters */
+		cmpb %r12b, %r13b			/* Compare the actual (value of) characters */
 		jne .LcompareChars			/* If non-zero, jump to compare */
 
-		incq %r12					/* Since same, increment lhs */
-		incq %r13					/* Increment rhs */
+		incq (%r12)					/* Since same, increment pointerval of r12 */
+		incq (%r13)					/* Increment pointerval of r13 */
 		jmp .LcharsLoop				/* Jump back to top of loop */
 	
 	.LlhsEnded:					/* if lhs ends */
-		cmpq $0, %r13				/* Check if next rhs character is null */
+		cmpb $0x00, %r13b			/* Check if next rhs character is null */
 		jne .Lequalstrings			/* If it is, move to equal strings */
 			movl $-1, %eax			/* Otherwise lhs is shorter */
 			ret
@@ -90,7 +90,7 @@ wc_str_compare:
 
 	.LcompareChars:				/* if strings have diff chars at a place */
 	subq %r12, %r13				/* find the chars difference */
-	movq %r12, %rax 				/* move that value to return */
+	movq %r12, %rax 			/* move that value to return */
 	ret
 
 	.Lequalstrings:				/* if strings are the same */
