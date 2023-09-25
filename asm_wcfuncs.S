@@ -57,42 +57,41 @@ wc_hash:
  */
 	.globl wc_str_compare
 wc_str_compare:
-	//INPUT PARAMETERS:   lhs: Pointer to the first string
-						//rhs: Pointer to the second string
+	//INPUT PARAMETERS:   lhs: Pointer to the first string into %rdi
+						//rhs: Pointer to da second string into %rsi
 
 	.LcharsLoop:				/* looping till finding different character */
-								// Put character from lhs into register
-								// Put character from rhs into register
+	movb %al, %rdi 				// Put character from lhs into register
+	movb %bl, %rsi				// Put character from rhs into register
 
-								//Check if lhs char is null
+	cmp	$0, %al					//Check if lhs char is null
 	jmp .LlhsEnded				//If it is, jump to lhsended
 
-								//Check if rhs char is null
+	cmp	$0, %bl					//Check if rhs char is null
 	jmp .LrhsEnded				//If it is, jump to rhsended
 
-								//Compare the actual characters
+	cmp %al, %bl					//Compare the actual characters
 	jne .LcompareChars			//If non-zero, jump to compare
 
-								//Since same, increment lhs
-								//Increment rhs
+	inc %rdi					//Since same, increment lhs
+	inc %rsi					//Increment rhs
 	jmp .LcharsLoop				//Jump back to top of loop
 	
 	.LlhsEnded:					/* if lhs ends */
-								//Check if next rhs character is null
+	cmp	$0, %bl					//Check if next rhs character is null
 	je .Lequalstrings			//If it is, move to equal strings
 
 	movl $-1, %eax				//Otherwise lhs is shorter
 	ret
 
 	.LrhsEnded:					/* if rhs ends */
-								//if we are here, we already know lhs is non-null so
-								//the right hand string must be longer aka positive value
+	//if we are here, we already know lhs is non-null so the right hand string must be longer
 	movl $1, %eax				/* move 1 to return*/
 	ret
 
 	.LcompareChars:				/* if strings have diff chars at a place */
-								//find the chars difference
-								//move that value to return
+	sub %al, %bl				//find the chars difference
+	movb %eax, %al 				//move that value to return
 	ret
 
 	.Lequalstrings:				/* if strings are the same */
