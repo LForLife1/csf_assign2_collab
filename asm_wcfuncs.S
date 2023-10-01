@@ -37,8 +37,22 @@
  */
 	.globl wc_hash
 wc_hash:
-	/* TODO: implement */
-	ret
+	movq $5381, %r11		/* store hash in %r11 */
+
+	.LhashCharLoop:
+		movq $0, %r10
+		movb (%rdi), %r10b	/* move current character value into %r10 */
+		cmpb $0, %r10b		/* if at NUL terminator */
+		je .LreturnHash
+
+		imulq $33, %r11		/* multiply hash by 33 */
+		addq %r10, %r11	/* + c */
+		incq %rdi			/* proceed to next letter */
+		jmp .LhashCharLoop
+
+	.LreturnHash:
+		movq %r11, %rax
+		ret
 
 /*
  * Compare two strings lexicographically. Return
