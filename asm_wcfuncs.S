@@ -40,18 +40,18 @@ wc_hash:
 	movq $5381, %r11		/* store hash in %r11 */
 
 	.LhashCharLoop:
-		movq $0, %r10
-		movb (%rdi), %r10b	/* move current character value into %r10 */
+		movq $0, %r10		/* reset character value */
+		movb (%rdi), %r10b	/* move current character value into %r10b */
 		cmpb $0, %r10b		/* if at NUL terminator */
-		je .LreturnHash
+		je .LreturnHash		/* return current hash */
 
 		imulq $33, %r11		/* multiply hash by 33 */
-		addq %r10, %r11	/* + c */
+		addq %r10, %r11		/* + c */
 		incq %rdi			/* proceed to next letter */
 		jmp .LhashCharLoop
 
 	.LreturnHash:
-		movq %r11, %rax
+		movq %r11, %rax		/* store hash in return register */
 		ret
 
 /*
@@ -255,7 +255,33 @@ wc_readnext:
  */
 	.globl wc_tolower
 wc_tolower:
-	/* TODO: implement */
+	subq $8, %rsp 				/* align stack */
+
+	movq %rdi, %r10
+
+	.LnextCharToLower:
+		movq $0, %r11			/* reset character value */
+		movb (%r10), %r11b		/* put character into %r11b */
+
+		cmpb $0, %r11b
+		je .LallCharactersLower	/* reached end of string */
+
+		movq %r11, %rdi			/* set argument for function call*/
+		call wc_isalpha			/* check if %r11b is a character */
+		cmpb $1, %al
+		jne .LcharacterIsGood	/* the character is not valid. Jump to next character */
+
+		/* to lower... */
+		cmpb $90, %r11b 		/* compare with 'Z' */
+		jg .LcharacterIsGood	/* the character is lowercase already. Jump to next character */
+		addq $32, (%r10)		/* convert to lowercase */
+
+		.LcharacterIsGood:
+		incq %r10
+		jmp .LnextCharToLower	/* jump to next character */
+
+	.LallCharactersLower:
+	addq $8, %rsp				/* realign stack */
 	ret
 
 /*
