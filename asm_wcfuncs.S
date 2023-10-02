@@ -123,17 +123,11 @@ wc_str_compare:
  *    void wc_str_copy(unsigned char *dest, const unsigned char *source);
  */
 	.globl wc_str_copy
-wc_str_copy:
-							/* reserve callee saved registers ****************************************** TODO: Check if necessary */
-	pushq %r12				/* pointer to source start */
-	pushq %r13				/* pointer to destination start */
-	pushq %r14				/* temporary variable for storing current character in loop*/
-	
+wc_str_copy:	
 	movq %rsi, %r12 		/* set %r12 to pointer to source start (argument 1) */
 	movq %rdi, %r13 		/* set %r13 to pointer to destination start (argument 2) */
 	
 	.LNotAtEnd:
-
 		movq (%r12), %r14
 		movq %r14, (%r13) 	/* set data at destination to the data at source */
 		incq %r12 			/* continue to next character in the string */
@@ -141,10 +135,6 @@ wc_str_copy:
 
 		cmpq $0, (%r12)		/* if character at %r12 is not zero (NUL terminator) (not at end of source string) */
 		jne .LNotAtEnd		/* jump to .LNotAtEnd */
-
-	popq %r12
-	popq %r13
-	popq %r14
 	ret
 
 /*
