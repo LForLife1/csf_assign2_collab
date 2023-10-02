@@ -257,14 +257,14 @@ wc_readnext:
 wc_tolower:
 	subq $8, %rsp 				/* align stack */
 
-	movq %rdi, %r10
+	movq %rdi, %r10				/* store pointer to current char in %r10 */
 
 	.LnextCharToLower:
 		movq $0, %r11			/* reset character value */
-		movb (%r10), %r11b		/* put character into %r11b */
+		movb (%r10), %r11b		/* put current character into %r11b */
 
 		cmpb $0, %r11b
-		je .LallCharactersLower	/* reached end of string */
+		je .LallCharactersLower	/* reached end of string, jump to return */
 
 		movq %r11, %rdi			/* set argument for function call*/
 		call wc_isalpha			/* check if %r11b is a character */
@@ -293,7 +293,29 @@ wc_tolower:
  */
 	.globl wc_trim_non_alpha
 wc_trim_non_alpha:
-	/* TODO: implement */
+	subq $8, %rsp				/* align stack */
+
+	movq %rdi, %r10
+
+	.LnextCharToTrim:
+		movq $0, %r11
+		movb (%r10), %r11b
+
+		cmpb $0, %r11b
+		je .LallNonAlphaTrimmed
+
+		movq %r11, %rdi
+		call wc_isalpha
+		cmpb $1, %al
+		je .LnextCharToTrim		/* the character is alpha, so jump to the next character */
+
+		/* if character is non-alpha, shift subsequent characters to delete the current non-alpha */
+		.LshiftNextChar:
+			/* TODO: see above comment*/
+
+
+	.LallNonAlphaTrimmed:
+	addq $8, %rsp				/* realign stack */
 	ret
 
 /*
