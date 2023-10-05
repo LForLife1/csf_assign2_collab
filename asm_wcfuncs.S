@@ -74,7 +74,12 @@ wc_hash:
 wc_str_compare:
 	/* INPUT PARAMETERS:   	lhs: Pointer to the first string into %rdi
 							rhs: Pointer to da second string into %rsi */
-
+    
+	pushq %r12			/* store callee-saved register */
+    pushq %r13			/* store callee-saved register */
+    pushq %r14			/* store callee-saved register */
+	movq $0, %rax		/* clear rax */
+	
 	.LcharsLoop:				/* looping until finding different character */
 
 		movb (%rdi), %r12b			/* Put character from lhs into register */
@@ -99,11 +104,11 @@ wc_str_compare:
 		je .Lequalstrings			/* If it is, move to equal strings */
 			
 		movl $-1, %eax				/* Otherwise lhs is shorter */
-		ret
+		jmp .Lreturn_strcomp
 
 	.LposValue:						/* returning positive value */
 		movl $1, %eax				/* move 1 to return*/
-		ret
+		jmp .Lreturn_strcomp
 
 	.LcompareChars:					/* if strings have diff chars at a place */
 
@@ -111,11 +116,16 @@ wc_str_compare:
 		jns .LposValue				/* if the subtraction ticks the NEGATIVE flag then rhs > lhs */
 
 		movl $-1, %eax				/* otherwise return negative value because less than */
-		ret
+		jmp .Lreturn_strcomp
 
 	.Lequalstrings:					/* if strings are the same */
 		movl $0, %eax				/* move 0 to return for equal strings*/
-		ret
+	
+	.Lreturn_strcomp:
+	    popq %r14			/* restore callee-saved register */
+    	popq %r13			/* restore callee-saved register */
+		popq %r12			/* restore callee-saved register */
+    	ret
 
 /*
  * Copy NUL-terminated source string to the destination buffer.
@@ -133,12 +143,12 @@ wc_str_copy:
 	movq %rdi, %r13 		/* set %r13 to pointer to destination start (argument 2) */
 	
 	.LNotAtEnd:
-		movq (%r12), %r14
-		movq %r14, (%r13) 	/* set data at destination to the data at source */
-		incq %r12 			/* continue to next character in the string */
-		incq %r13			/* continue to next character in the string */
-		cmpq $0, (%r12)		/* if character at %r12 is not zero (NUL terminator) (not at end of source string) */
-		jne .LNotAtEnd		/* jump to .LNotAtEnd */
+		movb (%r12), %r14b	/* move byte from source into r14b */
+		movb %r14b, (%r13)	/* move byte from r14b into destination */
+		incq %r12			/* increment pointer to source */
+		incq %r13			/* increment pointer to destination */
+		cmpb $0, %r14b		/* check if byte is null */
+		jne .LNotAtEnd		/* if not null, continue copying */
 
     popq %r14			/* restore callee-saved register */
     popq %r13			/* restore callee-saved register */
@@ -435,16 +445,16 @@ wc_find_or_insert:
 	je .Linsert							/* if null, insert new entry */
 
 	.LfindIfInList:						/* find if the entry is already in the list */
-		cmpq $0, (%rbx)					/* check if the current entry is null */
+		cmpq $0, %rbx					/* check if the current entry is null */
 		jz .Linsert						/* if null, insert new entry */
 
 		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to current word in entry into rdi */
-		movq %rsi, %rsi								/* move pointer to word to be inserted into rsi */
+		movq %r13, %rsi								/* move pointer to word to be inserted into rsi */
 		call wc_str_compare				/* compare the two words */
-		cmpq $0, %rax					/* check if the words are equal */
+		cmpl $0, %eax					/* check if the words are equal */
 		je .LobjFound					/* if equal, return the entry */
 
-		leaq WORDENTRY_NEXT_OFFSET(%rbx), %rbx		/* move pointer to next WordEntry object into rbx */
+		movq WORDENTRY_NEXT_OFFSET(%rbx), %rbx	/* move pointer to next WordEntry object into rbx */
 		jmp .LfindIfInList				/* move to next WordEntry */	
 
 	.Linsert: 							/* inserting the value because not found */
@@ -458,8 +468,8 @@ wc_find_or_insert:
 		movq %r13, %rsi					/* move pointer to string to be inserted into rsi */
 		call wc_str_copy				/* copy word to be inserted into new WordEntry object */
 
-		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi
-		movq $MAX_WORDLEN, %rcx
+		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to word in new WordEntry object into rdi */
+		movq $MAX_WORDLEN, %rcx						/* set rcx to MAX_WORDLEN */
 		movb $0, (%rdi, %rcx)	
 		movq $0, WORDENTRY_COUNT_OFFSET(%rbx)		/* make count 0 */
 
