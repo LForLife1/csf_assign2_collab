@@ -234,7 +234,69 @@ wc_isalpha:
  */
 	.globl wc_readnext
 wc_readnext:
-	/* TODO: implement */
+	subq $8, %rsp 			/* align stack */
+
+	/* reserve callee saved registers */
+	pushq %r12 				
+	pushq %r13				
+	pushq %r14
+	pushq %r15
+
+	movq %rdi, %r12 		/* store input file <first arg> in %r12 */
+	movq %rsi, %r13			/* store destination pointer <second arg> in %r13 */
+	movq $0, %r14			/* store char counter in %r14 */
+	
+	.LloopUntilEndWord:
+		movq %r12, %rdi
+		call fgetc
+		movq %rax, %r15				/* store char into %r15 temporarily */
+
+		cmpb $-1, %r15b				/* reached EOF. Return. */
+		je .LEndWord
+
+		movq %r15, %rdi				/* check if char is whitespace next */
+		call wc_isspace
+		cmpb $0, %al
+		jne .LcheckHasStartedWord	/* jump if is whitespace (but not necessarily return) */
+
+
+		/* add character to word */
+		movq %r15, (%r13)
+		incq %r13
+
+		cmpq $MAX_WORDLEN, %r14
+		je .LEndWord		/* reached max word length. Return. */
+		incq %r14
+		
+		jmp .LloopUntilEndWord
+
+	.LcheckHasStartedWord:
+		cmpq $0, %r14
+		jg .LEndWord				/* if word length > 0, end word*/
+		jmp .LloopUntilEndWord		/* else new word hasn't started, continue*/
+
+	/* ON REACHED END OF WORD */
+	.LEndWord:
+	cmpq $0, %r14
+	je .LdidntReadWord /* if reached EOF */
+
+	movq $0, (%r13)					/* add NUL terminator */
+
+	popq %r12
+	popq %r13
+	popq %r14
+	popq %r15
+	addq $8, %rsp
+	movq $1, %rax
+	ret
+
+	.LdidntReadWord:
+	popq %r12
+	popq %r13
+	popq %r14
+	popq %r15
+	addq $8, %rsp
+	movq $0, %rax
 	ret
 
 /*
