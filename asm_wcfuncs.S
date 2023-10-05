@@ -287,7 +287,7 @@ wc_trim_non_alpha:
     movq %rdi, %rbx			/* store pointer to current char in %rbx */
 
     cmpq $0, %rdi			/* check if pointer is NULL*/
-    je .Lreturn				/* if so exit function */
+    je .Lreturn_tna				/* if so exit function */
 
     .LfindStringEnd:
         movb (%rbx), %r11b	/* load current char into %r11 */
@@ -319,13 +319,13 @@ wc_trim_non_alpha:
         cmpq $1, %rax			/* check if current char is alpha */
         je .LsetNullCharPlusOne	/* if it is, set the next character to null */
         movb $0, (%rbx)			/* otherwise, set the current character to null */
-        jmp .Lreturn			/* jump to .Lreturn */
+        jmp .Lreturn_tna		/* jump to .Lreturn */
 
     .LsetNullCharPlusOne:
         addq $1, %rbx			/* increment pointer to next char */
         movb $0, (%rbx)			/* set the next character to null */
 	
-    .Lreturn:
+    .Lreturn_tna:
         popq %rbx				/* restore callee-saved register and restore stack */
         ret
 
@@ -348,8 +348,69 @@ wc_trim_non_alpha:
  */
 	.globl wc_find_or_insert
 wc_find_or_insert:
-	/* TODO: implement */
-	ret
+
+	/* save callee-saved register and align stack */
+	pushq %r12							/* store value of head while we manipulate rbx */
+	pushq %r13							/* store pointer to string to be inserted */
+    pushq %rbx							/* stores value of current WordEntry object */			
+	
+	testq %rsi, %rsi					/* check if string is non-null */
+	jz .Lreturn							/* if null, return null */
+
+	movq %rdi, %r12						/* move pointer to head into r12 */
+	movq %rsi, %r13						/* move pointer to string to be inserted into r13 */
+	movq %rdi, %rbx						/* save pointer to WordEntry object in rbx */
+
+	//check if head is null
+	cmpq $0, %rbx						/* check if head is null */
+	je .Linsert							/* if null, insert new entry */
+
+	.LfindIfInList:						/* find if the entry is already in the list */
+		cmpq $0, (%rbx)					/* check if the current entry is null */
+		jz .Linsert						/* if null, insert new entry */
+
+		movq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to current word in entry into rdi */
+		movq %rsi, %rsi								/* move pointer to word to be inserted into rsi */
+		call wc_str_compare				/* compare the two words */
+		cmpq $0, %rax					/* check if the words are equal */
+		je .LobjFound					/* if equal, return the entry */
+
+		movq WORDENTRY_NEXT_OFFSET(%rbx), %rbx		/* move pointer to next WordEntry object into rbx */
+		jmp .LfindIfInList				/* move to next WordEntry */	
+
+	.Linsert: 							/* inserting the value because not found */
+		movq $WORDENTRY_SIZE, %rdi		/* move size of WordEntry object to rdi */
+		call malloc						/* allocate memory for new WordEntry object */
+		movq %rax, %rbx					/* move pointer to new WordEntry object to rbx */
+
+		//TODO: ERROR HERE RN, RDI WONT TAKE VALUE BUT TAKES 0x00
+
+		movq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to word in new WordEntry object into rdi */
+		movq %r13, %rsi					/* move pointer to string to be inserted into rsi */
+		call wc_str_copy				/* copy word to be inserted into new WordEntry object */
+
+		movb $0, WORDENTRY_WORD_OFFSET(%rbx, %rax)	/* set null terminator at end of word */
+		//TODO FIX ABOVE LINE
+		movq $0, WORDENTRY_COUNT_OFFSET(%rbx)		/* set count to 0 */
+
+		movq %r12, WORDENTRY_NEXT_OFFSET(%rbx)		/* set next pointer to head */
+		movq %rbx, %r12					/* set head to new WordEntry object */
+
+		movq $1, (%rdx)					/* store one in inserted */
+		jmp .Lreturn					/* return the entry */
+
+	.LobjFound:
+		movq %rbx, %rax					/* move pointer to WordEntry object into rax */
+		movq $0, (%rdx)					/* store zero in inserted */
+		jmp .Lreturn					/* return the entry */
+
+	.Lreturn:
+		popq %rbx						/* restore callee-saved register */
+		popq %r13						/* restore callee-saved register */
+		popq %r12						/* restore callee-saved register */
+		ret
+	
+	
 
 /*
  * Find or insert the WordEntry object for the given string (s), returning
