@@ -124,7 +124,11 @@ wc_str_compare:
  *    void wc_str_copy(unsigned char *dest, const unsigned char *source);
  */
 	.globl wc_str_copy
-wc_str_copy:	
+wc_str_copy:
+    pushq %r12			/* store callee-saved register */
+    pushq %r13			/* store callee-saved register */
+    pushq %r14			/* store callee-saved register */
+
 	movq %rsi, %r12 		/* set %r12 to pointer to source start (argument 1) */
 	movq %rdi, %r13 		/* set %r13 to pointer to destination start (argument 2) */
 	
@@ -133,10 +137,13 @@ wc_str_copy:
 		movq %r14, (%r13) 	/* set data at destination to the data at source */
 		incq %r12 			/* continue to next character in the string */
 		incq %r13			/* continue to next character in the string */
-
 		cmpq $0, (%r12)		/* if character at %r12 is not zero (NUL terminator) (not at end of source string) */
 		jne .LNotAtEnd		/* jump to .LNotAtEnd */
-	ret
+
+    popq %r14			/* restore callee-saved register */
+    popq %r13			/* restore callee-saved register */
+    popq %r12			/* restore callee-saved register */
+    ret
 
 /*
  * Return 1 if the character code in c is a whitespace character,
@@ -237,67 +244,64 @@ wc_readnext:
 	subq $8, %rsp 			/* align stack */
 
 	/* reserve callee saved registers */
-	pushq %r12 				
-	pushq %r13				
-	pushq %r14
-	pushq %r15
+	pushq %r12 				/* save %r12 */
+	pushq %r13				/* save %r13 */
+	pushq %r14				/* save %r14 */
+	pushq %r15				/* save %r15 */
 
 	movq %rdi, %r12 		/* store input file <first arg> in %r12 */
 	movq %rsi, %r13			/* store destination pointer <second arg> in %r13 */
 	movq $0, %r14			/* store char counter in %r14 */
 	
 	.LloopUntilEndWord:
-		movq %r12, %rdi
-		call fgetc
-		movq %rax, %r15				/* store char into %r15 temporarily */
+		movq %r12, %rdi			/* move input file to %rdi */
+		call fgetc				/* call fgetc to get next character */
+		movq %rax, %r15			/* store char into %r15 temporarily */
 
-		cmpb $-1, %r15b				/* reached EOF. Return. */
-		je .LEndWord
+		cmpb $-1, %r15b			/* compare char to -1 (EOF) */
+		je .LEndWord			/* if char is EOF, jump to end of word */
 
-		movq %r15, %rdi				/* check if char is whitespace next */
-		call wc_isspace
-		cmpb $0, %al
-		jne .LcheckHasStartedWord	/* jump if is whitespace (but not necessarily return) */
+		movq %r15, %rdi			/* move char to %rdi */
+		call wc_isspace			/* call wc_isspace to check if char is whitespace */
+		cmpb $0, %al			/* compare result to 0 */
+		jne .LcheckHasStartedWord	/* if char is whitespace, jump to check if word has started */
 
 
 		/* add character to word */
-		movq %r15, (%r13)
-		incq %r13
+		movq %r15, (%r13)		/* move char to destination pointer */
+		incq %r13				/* increment destination pointer */
 
-		cmpq $MAX_WORDLEN, %r14
-		je .LEndWord		/* reached max word length. Return. */
-		incq %r14
+		cmpq $MAX_WORDLEN, %r14	/* compare char counter to MAX_WORDLEN */
+		je .LEndWord			/* if char counter is equal to MAX_WORDLEN, jump to end of word */
+		incq %r14				/* increment char counter */
 		
-		jmp .LloopUntilEndWord
+		jmp .LloopUntilEndWord	/* jump to beginning of loop */
 
 	.LcheckHasStartedWord:
-		cmpq $0, %r14
-		jg .LEndWord				/* if word length > 0, end word*/
-		jmp .LloopUntilEndWord		/* else new word hasn't started, continue*/
+		cmpq $0, %r14			/* compare char counter to 0 */
+		jg .LEndWord			/* if char counter is greater than 0, jump to end of word */
+		jmp .LloopUntilEndWord	/* else new word hasn't started, continue*/
 
 	/* ON REACHED END OF WORD */
 	.LEndWord:
-	cmpq $0, %r14
-	je .LdidntReadWord /* if reached EOF */
+		cmpq $0, %r14				/* compare char counter to 0 */
+		je .LdidntReadWord 			/* if char counter is equal to 0, jump to didn't read word */
 
-	movq $0, (%r13)					/* add NUL terminator */
-
-	popq %r12
-	popq %r13
-	popq %r14
-	popq %r15
-	addq $8, %rsp
-	movq $1, %rax
-	ret
+		movq $0, (%r13)				/* add NUL terminator */
+		movq $1, %rax				/* move 1 to %rax */
+		jmp .Lreturn_rn				/* jump to return */
 
 	.LdidntReadWord:
-	popq %r12
-	popq %r13
-	popq %r14
-	popq %r15
-	addq $8, %rsp
-	movq $0, %rax
-	ret
+		movq $0, %rax				/* move 0 to %rax */
+									/* fall through to return */
+
+	.Lreturn_rn:
+		popq %r15					/* pop values out in reverse order cause stack */
+		popq %r14
+		popq %r13
+		popq %r12
+		addq $8, %rsp				/* add 8 to stack pointer */
+		ret	
 
 /*
  * Convert the NUL-terminated character string in the array
@@ -414,6 +418,8 @@ wc_find_or_insert:
 	/* save callee-saved register and align stack */
 	pushq %r12							/* store value of head while we manipulate rbx */
 	pushq %r13							/* store pointer to string to be inserted */
+	pushq %r14							/* save %r14 */
+	pushq %r15							/* save %r15 */
     pushq %rbx							/* stores value of current WordEntry object */			
 	
 	testq %rsi, %rsi					/* check if string is non-null */
@@ -421,6 +427,7 @@ wc_find_or_insert:
 
 	movq %rdi, %r12						/* move pointer to head into r12 */
 	movq %rsi, %r13						/* move pointer to string to be inserted into r13 */
+	movq %rdx, %r14
 	movq %rdi, %rbx						/* save pointer to WordEntry object in rbx */
 
 	//check if head is null
@@ -431,13 +438,13 @@ wc_find_or_insert:
 		cmpq $0, (%rbx)					/* check if the current entry is null */
 		jz .Linsert						/* if null, insert new entry */
 
-		movq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to current word in entry into rdi */
+		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to current word in entry into rdi */
 		movq %rsi, %rsi								/* move pointer to word to be inserted into rsi */
 		call wc_str_compare				/* compare the two words */
 		cmpq $0, %rax					/* check if the words are equal */
 		je .LobjFound					/* if equal, return the entry */
 
-		movq WORDENTRY_NEXT_OFFSET(%rbx), %rbx		/* move pointer to next WordEntry object into rbx */
+		leaq WORDENTRY_NEXT_OFFSET(%rbx), %rbx		/* move pointer to next WordEntry object into rbx */
 		jmp .LfindIfInList				/* move to next WordEntry */	
 
 	.Linsert: 							/* inserting the value because not found */
@@ -447,32 +454,33 @@ wc_find_or_insert:
 
 		//TODO: ERROR HERE RN, RDI WONT TAKE VALUE BUT TAKES 0x00
 
-		movq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to word in new WordEntry object into rdi */
+		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to word in new WordEntry object into rdi */
 		movq %r13, %rsi					/* move pointer to string to be inserted into rsi */
 		call wc_str_copy				/* copy word to be inserted into new WordEntry object */
 
-		movb $0, WORDENTRY_WORD_OFFSET(%rbx, %rax)	/* set null terminator at end of word */
-		//TODO FIX ABOVE LINE
-		movq $0, WORDENTRY_COUNT_OFFSET(%rbx)		/* set count to 0 */
+		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi
+		movq $MAX_WORDLEN, %rcx
+		movb $0, (%rdi, %rcx)	
+		movq $0, WORDENTRY_COUNT_OFFSET(%rbx)		/* make count 0 */
 
 		movq %r12, WORDENTRY_NEXT_OFFSET(%rbx)		/* set next pointer to head */
 		movq %rbx, %r12					/* set head to new WordEntry object */
 
-		movq $1, (%rdx)					/* store one in inserted */
+		movq $1, (%r14)					/* store one in inserted */
 		jmp .Lreturn					/* return the entry */
 
 	.LobjFound:
 		movq %rbx, %rax					/* move pointer to WordEntry object into rax */
-		movq $0, (%rdx)					/* store zero in inserted */
+		movq $0, (%r14)					/* store zero in inserted */
 		jmp .Lreturn					/* return the entry */
 
 	.Lreturn:
 		popq %rbx						/* restore callee-saved register */
+		popq %r15						/* restore callee-saved register */
+		popq %r14						/* restore callee-saved register */
 		popq %r13						/* restore callee-saved register */
 		popq %r12						/* restore callee-saved register */
 		ret
-	
-	
 
 /*
  * Find or insert the WordEntry object for the given string (s), returning
