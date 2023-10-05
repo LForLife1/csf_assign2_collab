@@ -160,9 +160,13 @@ void test_isalpha(TestObjs *objs) {
 
   ASSERT(1 == wc_isalpha('x'));
   ASSERT(1 == wc_isalpha('F'));
+  ASSERT(1 == wc_isalpha('r'));
+  ASSERT(1 == wc_isalpha('O'));
 
   ASSERT(0 == wc_isalpha('0'));
   ASSERT(0 == wc_isalpha(','));
+  ASSERT(0 == wc_isalpha(' '));
+  ASSERT(0 == wc_isalpha('.'));
 }
 
 void test_readnext(TestObjs *objs) {

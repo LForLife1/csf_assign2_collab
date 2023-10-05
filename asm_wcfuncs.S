@@ -12,6 +12,7 @@
 #define WORDENTRY_WORD_OFFSET   (0)
 #define WORDENTRY_COUNT_OFFSET  (MAX_WORDLEN+1)
 #define WORDENTRY_NEXT_OFFSET   (MAX_WORDLEN+1+4+4)
+#define WORDENTRY_SIZE          (WORDENTRY_NEXT_OFFSET+8)
 
 	.section .rodata
 /* Define any string constants or read-only data here */
@@ -191,17 +192,17 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	cmp $65, %rdi 				/* compare to A */
+	cmpb $65, %dil 				/* compare to A */
 	jl .LoutOfCapitalRange 		/* if it's greater than or equal to A... */
-	cmp $90, %rdi 				/* compare to Z */
+	cmpb $90, %dil 				/* compare to Z */
 	jg .LoutOfCapitalRange		/* if it's less than or equal to Z... */
 	jmp .LisValid				/* it is valid */
 
 	.LoutOfCapitalRange:		/* if it's not between A and Z, check between a and z*/
 				
-	cmp $97, %rdi				/* compare to a */
+	cmpb $97, %dil				/* compare to a */
 	jl .LisNotValid				/* if it's greater than or equal to a... */
-	cmp $122, %rdi				/* compare to z */
+	cmpb $122, %dil				/* compare to z */
 	jg .LisNotValid				/* if it's less than or equal to z... */
 	jmp .LisValid				/* it is valid */
 
@@ -243,36 +244,35 @@ wc_readnext:
  * C function prototype:
  *    void wc_tolower(unsigned char *w);
  */
-	.globl wc_tolower
+    .globl wc_tolower
 wc_tolower:
-	subq $8, %rsp 				/* align stack */
+    pushq %rbx				/* save callee-saved register */
+    movq %rdi, %rbx			/* store pointer to current char in %rbx */
 
-	movq %rdi, %r10				/* store pointer to current char in %r10 */
+    .LnextCharToLower:
+        movq $0, %r11		/* reset character value */
+        movb (%rbx), %r11b	/* put current character into %r11b */
 
-	.LnextCharToLower:
-		movq $0, %r11			/* reset character value */
-		movb (%r10), %r11b		/* put current character into %r11b */
+        cmpb $0, %r11b
+        je .LallCharactersLower	/* reached end of string, jump to return */
 
-		cmpb $0, %r11b
-		je .LallCharactersLower	/* reached end of string, jump to return */
+        movq %r11, %rdi		/* set argument for function call*/
+        call wc_isalpha		/* check if %r11b is a character */
+        cmpb $1, %al
+        jne .LcharacterIsGood	/* the character is not valid. Jump to next character */
 
-		movq %r11, %rdi			/* set argument for function call*/
-		call wc_isalpha			/* check if %r11b is a character */
-		cmpb $1, %al
-		jne .LcharacterIsGood	/* the character is not valid. Jump to next character */
+        /* to lower... */
+        cmpb $90, %r11b 	/* compare with 'Z' */
+        jg .LcharacterIsGood	/* the character is lowercase already. Jump to next character */
+        addq $32, (%rbx)	/* convert to lowercase */
 
-		/* to lower... */
-		cmpb $90, %r11b 		/* compare with 'Z' */
-		jg .LcharacterIsGood	/* the character is lowercase already. Jump to next character */
-		addq $32, (%r10)		/* convert to lowercase */
+    .LcharacterIsGood:
+        incq %rbx
+        jmp .LnextCharToLower	/* jump to next character */
 
-		.LcharacterIsGood:
-		incq %r10
-		jmp .LnextCharToLower	/* jump to next character */
-
-	.LallCharactersLower:
-	addq $8, %rsp				/* realign stack */
-	ret
+    .LallCharactersLower:
+    popq %rbx				/* restore callee-saved register */
+    ret
 
 /*
  * Remove any non-alphaabetic characters from the end of the
@@ -283,30 +283,51 @@ wc_tolower:
  */
 	.globl wc_trim_non_alpha
 wc_trim_non_alpha:
-	subq $8, %rsp				/* align stack */
+    pushq %rbx				/* save callee-saved register and align stack */
+    movq %rdi, %rbx			/* store pointer to current char in %rbx */
 
-	movq %rdi, %r10
+    cmpq $0, %rdi			/* check if pointer is NULL*/
+    je .Lreturn				/* if so exit function */
 
-	.LnextCharToTrim:
-		movq $0, %r11
-		movb (%r10), %r11b
+    .LfindStringEnd:
+        movb (%rbx), %r11b	/* load current char into %r11 */
+        cmpb $0, %r11b			/* check if current char is null character */
+        je .LloopbackAlpha		/* if so jump to .LloopbackAlpha */
+        incq %rbx				/* increment pointer to next char */
+        jmp .LfindStringEnd		/* jump to .LfindStringEnd */
 
-		cmpb $0, %r11b
-		je .LallNonAlphaTrimmed
+    //backtrack to first alpha
+    //we should use wc_isalpha to check if current char is alpha
+    .LloopbackAlpha:
+        cmpq %rdi, %rbx			/* check if pointer is at beginning of string */
+        je .LhaveBackTrackedChar/* if it is, we have to move back to the beginning */
 
-		movq %r11, %rdi
-		call wc_isalpha
-		cmpb $1, %al
-		je .LnextCharToTrim		/* the character is alpha, so jump to the next character */
+        movb (%rbx), %dil		/* move current chatacter into param for is_alpha */
+        call wc_isalpha			/* call wc_isalpha to check if current char is alpha */
 
-		/* if character is non-alpha, shift subsequent characters to delete the current non-alpha */
-		.LshiftNextChar:
-			/* TODO: see above comment*/
+        cmpq $1, %rax			/* check if current char is alpha */
+        je .LhaveBackTrackedChar/* if it is, we found our last character */
 
+                                /* otherwise we have to keep moving back */
+        decq %rbx				/* decrement pointer to previous char */
+        jmp .LloopbackAlpha		/* jump to .LloopbackAlpha */
 
-	.LallNonAlphaTrimmed:
-	addq $8, %rsp				/* realign stack */
-	ret
+    .LhaveBackTrackedChar:
+		movb (%rbx), %dil		/* move current character into param for is_alpha */
+        call wc_isalpha			/* call wc_isalpha to check if current char is alpha */
+
+        cmpq $1, %rax			/* check if current char is alpha */
+        je .LsetNullCharPlusOne	/* if it is, set the next character to null */
+        movb $0, (%rbx)			/* otherwise, set the current character to null */
+        jmp .Lreturn			/* jump to .Lreturn */
+
+    .LsetNullCharPlusOne:
+        addq $1, %rbx			/* increment pointer to next char */
+        movb $0, (%rbx)			/* set the next character to null */
+	
+    .Lreturn:
+        popq %rbx				/* restore callee-saved register and restore stack */
+        ret
 
 /*
  * Search the specified linked list of WordEntry objects for an object
