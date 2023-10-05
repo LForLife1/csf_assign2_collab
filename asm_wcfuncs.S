@@ -517,8 +517,22 @@ wc_dict_find_or_insert:
  */
 	.globl wc_free_chain
 wc_free_chain:
-	/* TODO: implement */
-	ret
+	
+	pushq %rbx							/* save callee-saved register, align stack*/
+	movq %rdi, %rbx						/* move pointer to head into r10 */
+
+	.LfreeLoop:
+		cmpq $0, %rbx					/* check if current entry is null */
+		je .LfreeReturn					/* if null, end of linked list so return */
+
+		movq %rbx, %rdi					/* move pointer to current WordEntry object into rdi */
+		movq WORDENTRY_NEXT_OFFSET(%rbx), %rbx		/* move pointer to next WordEntry object into rbx */
+		call free						/* free current WordEntry object */
+		jmp .LfreeLoop					/* move to next WordEntry object */
+
+	.LfreeReturn:
+		popq %rbx						/* restore callee-saved register */
+		ret
 
 /*
 vim:ft=gas:
