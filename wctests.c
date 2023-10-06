@@ -226,6 +226,25 @@ void test_find_or_insert(TestObjs *objs) {
 
   struct WordEntry *p;
 
+  p = wc_find_or_insert(list, NULL, &inserted);
+  ASSERT(0 == inserted);
+
+  p = wc_find_or_insert(list, (const unsigned char *) "r", &inserted);
+  ASSERT(1 == inserted);
+  list = p;
+  ASSERT(p != NULL);
+  ASSERT(0 == strcmp("r", (const char *) p->word));
+  ASSERT(0 == p->count);
+  ++p->count;
+  
+  p = wc_find_or_insert(list, (const unsigned char *) "s", &inserted);
+  ASSERT(1 == inserted);
+  list = p;
+  ASSERT(p != NULL);
+  ASSERT(0 == strcmp("s", (const char *) p->word));
+  ASSERT(0 == p->count);
+  ++p->count;
+
   p = wc_find_or_insert(list, (const unsigned char *) "avis", &inserted);
   ASSERT(1 == inserted);
   list = p;
@@ -249,11 +268,26 @@ void test_find_or_insert(TestObjs *objs) {
   ASSERT(1 == p->count);
   ++p->count;
 
+  p = wc_find_or_insert(list, (const unsigned char *) "artist", &inserted);
+  ASSERT(1 == inserted);
+  list = p;
+  ASSERT(p != NULL);
+  ASSERT(0 == strcmp("artist", (const char *) p->word));
+  ASSERT(0 == p->count);
+  ++p->count;
+
   p = wc_find_or_insert(list, (const unsigned char *) "ax's", &inserted);
   ASSERT(0 == inserted);
   ASSERT(p != NULL);
   ASSERT(0 == strcmp("ax's", (const char *) p->word));
   ASSERT(1 == p->count);
+  ++p->count;
+
+  p = wc_find_or_insert(list, (const unsigned char *) "ax's", &inserted);
+  ASSERT(0 == inserted);
+  ASSERT(p != NULL);
+  ASSERT(0 == strcmp("ax's", (const char *) p->word));
+  ASSERT(2 == p->count);
   ++p->count;
 }
 
