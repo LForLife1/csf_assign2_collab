@@ -433,7 +433,7 @@ wc_find_or_insert:
     pushq %rbx							/* stores value of current WordEntry object */			
 	
 	testq %rsi, %rsi					/* check if string is non-null */
-	jz .Lreturn							/* if null, return null */
+	jz .Lnullval						/* if null, return null */
 
 	movq %rdi, %r12						/* move pointer to head into r12 */
 	movq %rsi, %r13						/* move pointer to string to be inserted into r13 */
@@ -483,6 +483,10 @@ wc_find_or_insert:
 		movq %rbx, %rax					/* move pointer to WordEntry object into rax */
 		movq $0, (%r14)					/* store zero in inserted */
 		jmp .Lreturn					/* return the entry */
+
+	.Lnullval:
+		movq $0, (%rdx)					/* store zero in inserted */
+		movq $0, %rax					/* make rax null */
 
 	.Lreturn:
 		popq %rbx						/* restore callee-saved register */
@@ -535,6 +539,7 @@ wc_dict_find_or_insert:
 		movq %r12, %rdi					/* move pointer to WordEntry object into rdi */
 		movq %r14, %rsi					/* move pointer to string into rsi */
 		//TODO: GET INSERTED AND PASS ITS ADDRESS INTO RDX FOR THIS
+		movq $0, %rdx
 		call wc_find_or_insert			/* call wc_find_or_insert to find or insert the WordEntry object */
 
 
