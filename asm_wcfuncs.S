@@ -506,8 +506,47 @@ wc_find_or_insert:
  */
 	.globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
-	/* TODO: implement */
-	ret
+	pushq %r12							/* store callee-saved register */
+	pushq %r13							/* store callee-saved register */
+	pushq %r14							/* store callee-saved register */
+	pushq %r15							/* store callee-saved register */
+	pushq %rbx							/* store callee-saved register */
+
+	cmpq $0, %rdi						/* check if buckets is null */
+	je .Lreturn_dfi						/* if null, return null */
+
+	movq %rdi, %r12						/* move pointer to buckets into r12 */
+	movq %rsi, %r13						/* move num_buckets into r13 */
+	movq %rdx, %r14						/* move pointer to string into r14 */	
+
+	movq %r14, %rdi						/* move pointer to string into rdi */
+	movq $0, %rax						/* move zero to rax */
+	call wc_hash						/* call wc_hash to get hash code */
+
+	.Lmoduloloop:						/* we leave when rax holds a value smaller than num__buckets */
+		cmpq %rax, %r13					/* check if num_buckets is less than hash code */
+		jge .Lmodulobreak				/* if less, break out of loop */
+		subq %r13, %rax					/* subtract num_buckets from hash code */
+		jmp .Lmoduloloop				/* loop again */
+
+	.Lmodulobreak:						/* index is now correct */
+		movq %rax, %r13					/* move index into r13 */
+		movq (%r12, %r13, 8), %r12		/* move pointer to WordEntry object into r12 */
+		movq %r12, %rdi					/* move pointer to WordEntry object into rdi */
+		movq %r14, %rsi					/* move pointer to string into rsi */
+		//TODO: GET INSERTED AND PASS ITS ADDRESS INTO RDX FOR THIS
+		call wc_find_or_insert			/* call wc_find_or_insert to find or insert the WordEntry object */
+
+
+
+
+	.Lreturn_dfi:
+		popq %rbx						/* restore callee-saved register */
+		popq %r15						/* restore callee-saved register */
+		popq %r14						/* restore callee-saved register */
+		popq %r13						/* restore callee-saved register */
+		popq %r12						/* restore callee-saved register */
+		ret
 
 /*
  * Free all of the nodes in given linked list of WordEntry objects.
