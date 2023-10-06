@@ -38,6 +38,8 @@
  */
 	.globl wc_hash
 wc_hash:
+
+    subq $8, %rsp 			/*Align the stack pointer.*/
 	movq $5381, %r11		/* store hash in %r11 */
 
 	.LhashCharLoop:
@@ -53,6 +55,7 @@ wc_hash:
 
 	.LreturnHash:
 		movq %r11, %rax		/* store hash in return register */
+		addq $8, %rsp /*Align the stack pointer.*/
 		ret
 
 /*
@@ -173,6 +176,9 @@ wc_str_copy:
  */
 	.globl wc_isspace
 wc_isspace:
+
+    subq $8, %rsp 			/*Align the stack pointer.*/
+
     cmpq $32, %rdi 		/* Compare c to ' ' */
     je .Lis_space 		/* Jump if equal */
 
@@ -193,11 +199,13 @@ wc_isspace:
 
 	/* Since c is not a whitespace character... */
 	movl $0, %eax  	/* move 0 value to int sized return register */
+	addq $8, %rsp 			/*Align the stack pointer.*/
 	ret			 	/* return */
 
 	.Lis_space:
 	/* If c is a whitespace character... */
 	movl $1, %eax	/* move 1 value to int sized return register */
+	addq $8, %rsp 			/*Align the stack pointer.*/
 	ret			 	/* return */
 
 /*
@@ -474,7 +482,7 @@ wc_find_or_insert:
 		movq %r12, WORDENTRY_NEXT_OFFSET(%rbx)		/* set next pointer to head */
 		movq %rbx, %r12					/* set head to new WordEntry object */
 
-		movq $1, (%r14)					/* store one in inserted */
+		movl $1, (%r14)					/* store one in inserted */
 		jmp .Lreturn					/* return the entry */
 
 	.LobjFound:

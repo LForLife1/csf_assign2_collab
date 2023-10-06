@@ -16,7 +16,7 @@ main:
 	pushq %r14				/* file pointer */
 	pushq %r15				/* words hashtable */
 
-	cmpq $2 %rdi			/* if two arguements */
+	cmpq $2, %rdi			/* if two arguements */
 	je .LopenFileNormal
 
 	.LopenFileNormal:
