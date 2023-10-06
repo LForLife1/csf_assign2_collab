@@ -19,15 +19,18 @@ main:
 	cmpq $2, %rdi			/* if two arguements */
 	je .LopenFileNormal
 
+	
 	.LopenFileNormal:
-	movq $16, %rdi					/* malloc 16 bytes (8 -> r, 8 -> NUL */
+	/*
+	movq $16, %rdi					/* malloc 16 bytes (8 -> r, 8 -> NUL 
 	call malloc
-	leaq (%rsi, $1, $8) %rdi		/* load pointer to second element in argv */
-	movq $114, (%rax)				/* set "r" for reading*/
+	leaq (%rsi, $1, $8) %rdi		/* load pointer to second element in argv 
+	movq $114, (%rax)				/* set "r" for reading
 	incq %rax
 	movq $0, (%rax)
-	movq %rax, %rsi					/* store new pointer of str literal as 2nd arg */
-	call fopen
+	movq %rax, %rsi					/* store new pointer of str literal as 2nd arg 
+	call fopen 
+	*/
 	
 
 	ret

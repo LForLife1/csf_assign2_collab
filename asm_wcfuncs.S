@@ -80,7 +80,7 @@ wc_str_compare:
     
 	pushq %r12			/* store callee-saved register */
     pushq %r13			/* store callee-saved register */
-    pushq %r14			/* store callee-saved register */
+    subq $8, %rsp 			/*Align the stack pointer.*/
 	movq $0, %rax		/* clear rax */
 	
 	.LcharsLoop:				/* looping until finding different character */
@@ -125,7 +125,7 @@ wc_str_compare:
 		movl $0, %eax				/* move 0 to return for equal strings*/
 	
 	.Lreturn_strcomp:
-	    popq %r14			/* restore callee-saved register */
+		addq $8, %rsp /*Align the stack pointer.*/
     	popq %r13			/* restore callee-saved register */
 		popq %r12			/* restore callee-saved register */
     	ret
@@ -217,6 +217,8 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
+	
+	subq $8, %rsp /*Align the stack pointer.*/
 	cmpb $65, %dil 				/* compare to A */
 	jl .LoutOfCapitalRange 		/* if it's greater than or equal to A... */
 	cmpb $90, %dil 				/* compare to Z */
@@ -232,14 +234,14 @@ wc_isalpha:
 	jmp .LisValid				/* it is valid */
 
 	.LisNotValid:				/* if not valid */
-
 		movl $0, %eax			/* return 0 for false */
+		addq $8, %rsp /*Align the stack pointer.*/
 		ret
 
 	.LisValid:					/* if is valid */
-
-	movl $1, %eax 				/* return 1 for true */
-	ret
+		movl $1, %eax 				/* return 1 for true */
+		addq $8, %rsp /*Align the stack pointer.*/
+		ret
 
 /*
  * Read the next word from given input stream, storing
@@ -434,10 +436,10 @@ wc_trim_non_alpha:
 wc_find_or_insert:
 
 	/* save callee-saved register and align stack */
+	subq $8, %rsp 						/*Align the stack pointer.*/ 
 	pushq %r12							/* store value of head while we manipulate rbx */
 	pushq %r13							/* store pointer to string to be inserted */
 	pushq %r14							/* save %r14 */
-	pushq %r15							/* save %r15 */
     pushq %rbx							/* stores value of current WordEntry object */	
 
 	testq %rsi, %rsi					/* check if string is non-null */
@@ -496,10 +498,10 @@ wc_find_or_insert:
 
 	.Lreturn:
 		popq %rbx						/* restore callee-saved register */
-		popq %r15						/* restore callee-saved register */
 		popq %r14						/* restore callee-saved register */
 		popq %r13						/* restore callee-saved register */
 		popq %r12						/* restore callee-saved register */
+		addq $8, %rsp 					/*Align the stack pointer.*/
 		ret
 
 /*
@@ -516,15 +518,14 @@ wc_find_or_insert:
  */
 	.globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
-
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $16, %rbp
+	subq $16, %rsp
+	
 	pushq %r12							/* store callee-saved register */
 	pushq %r13							/* store callee-saved register */
 	pushq %r14							/* store callee-saved register */
 	pushq %r15							/* store callee-saved register */
-	pushq %rbx							/* store callee-saved register */
 
 	cmpq $0, %rdi						/* check if buckets is null */
 	je .Lreturn_dfi						/* if null, return null */
@@ -537,37 +538,29 @@ wc_dict_find_or_insert:
 	movq $0, %rax						/* move zero to rax */
 	call wc_hash						/* call wc_hash to get hash code */
 
-	.Lmoduloloop:						/* we leave when rax holds a value smaller than num__buckets */
-		cmpq %rax, %r13					/* check if num_buckets is less than hash code */
-		jge .Lmodulobreak				/* if less, break out of loop */
-		subq %r13, %rax					/* subtract num_buckets from hash code */
-		jmp .Lmoduloloop				/* loop again */
+    movq $0, %rdx       				/* clear rdx */
+	divl %r13d				        	/* divide puts remainder in rdx */
 
-	.Lmodulobreak:						/* index is now correct */
-		movq %rax, %r13					/* move index into r13 */
-		movq (%r12, %r13, 8), %r12		/* move pointer to WordEntry object into r12 */
-		movq %r12, %rdi					/* move pointer to WordEntry object into rdi */
-		movq %r14, %rsi					/* move pointer to string into rsi */
-		//TODO: GET INSERTED AND PASS ITS ADDRESS INTO RDX FOR THIS
+	/* hash is in r15 */
+    movl %edx, %r15d
 
-		leaq 8(%rbp), %rdx
-		call wc_find_or_insert			/* call wc_find_or_insert to find or insert the WordEntry object */
+    leaq (%r12, %r15, 8), %r12 			/* buckets[hash] = r12 + index * 8 */
+    movq (%r12), %rdi					/* put buckets[hash] into first param */
+	movq %r14, %rsi						/* moving string into second param */
+	leaq -8(%rbp), %rdx					/* put address into inserted */
+	call wc_find_or_insert				/* call find/insert */
 
-		/*  
-		// If a new node was inserted, update the buckets array element
-		int* inserted;
-  		if (inserted) {
-    		buckets[index] = word;
- 		 }
-  		return word; */
+	cmpl $0, -8(%rbp)					/* check if we found the node */
+	je .Lreturn_dfi						/* if we did, skip adding to hash */
+
+	movq %rax, (%r12)					/* if we inserted, add it to buckets[hash] */
 
 	.Lreturn_dfi:
-		popq %rbx						/* restore callee-saved register */
-		popq %r15						/* restore callee-saved register */
+	    popq %r15						/* restore callee-saved register */
 		popq %r14						/* restore callee-saved register */
 		popq %r13						/* restore callee-saved register */
 		popq %r12						/* restore callee-saved register */
-		addq $16, %rbp
+		addq $16, %rsp					/* reallocate stack */
 		popq %rbp
 		ret
 
