@@ -430,10 +430,10 @@ wc_find_or_insert:
 	pushq %r13							/* store pointer to string to be inserted */
 	pushq %r14							/* save %r14 */
 	pushq %r15							/* save %r15 */
-    pushq %rbx							/* stores value of current WordEntry object */			
-	
+    pushq %rbx							/* stores value of current WordEntry object */	
+
 	testq %rsi, %rsi					/* check if string is non-null */
-	jz .Lnullval						/* if null, return null */
+	jz .Lnullval						/* if null, return null */		
 
 	movq %rdi, %r12						/* move pointer to head into r12 */
 	movq %rsi, %r13						/* move pointer to string to be inserted into r13 */
@@ -446,7 +446,7 @@ wc_find_or_insert:
 
 	.LfindIfInList:						/* find if the entry is already in the list */
 		cmpq $0, %rbx					/* check if the current entry is null */
-		jz .Linsert						/* if null, insert new entry */
+		je .Linsert						/* if null, insert new entry */
 
 		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to current word in entry into rdi */
 		movq %r13, %rsi								/* move pointer to word to be inserted into rsi */
@@ -479,11 +479,11 @@ wc_find_or_insert:
 
 	.LobjFound:
 		movq %rbx, %rax					/* move pointer to WordEntry object into rax */
-		movq $0, (%r14)					/* store zero in inserted */
+		movl $0, (%r14)					/* store zero in inserted */
 		jmp .Lreturn					/* return the entry */
 
 	.Lnullval:
-		movq $0, (%rdx)					/* store zero in inserted */
+		movl $0, (%rdx)					/* store zero in inserted */
 		movq $0, %rax					/* make rax null */
 
 	.Lreturn:
@@ -508,6 +508,10 @@ wc_find_or_insert:
  */
 	.globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
+
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $16, %rbp
 	pushq %r12							/* store callee-saved register */
 	pushq %r13							/* store callee-saved register */
 	pushq %r14							/* store callee-saved register */
@@ -537,11 +541,13 @@ wc_dict_find_or_insert:
 		movq %r12, %rdi					/* move pointer to WordEntry object into rdi */
 		movq %r14, %rsi					/* move pointer to string into rsi */
 		//TODO: GET INSERTED AND PASS ITS ADDRESS INTO RDX FOR THIS
-		movq $0, %rdx
+
+		leaq 8(%rbp), %rdx
 		call wc_find_or_insert			/* call wc_find_or_insert to find or insert the WordEntry object */
 
 		/*  
 		// If a new node was inserted, update the buckets array element
+		int* inserted;
   		if (inserted) {
     		buckets[index] = word;
  		 }
@@ -553,6 +559,8 @@ wc_dict_find_or_insert:
 		popq %r14						/* restore callee-saved register */
 		popq %r13						/* restore callee-saved register */
 		popq %r12						/* restore callee-saved register */
+		addq $16, %rbp
+		popq %rbp
 		ret
 
 /*
