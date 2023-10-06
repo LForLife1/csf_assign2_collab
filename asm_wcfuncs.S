@@ -462,8 +462,6 @@ wc_find_or_insert:
 		call malloc						/* allocate memory for new WordEntry object */
 		movq %rax, %rbx					/* move pointer to new WordEntry object to rbx */
 
-		//TODO: ERROR HERE RN, RDI WONT TAKE VALUE BUT TAKES 0x00
-
 		leaq WORDENTRY_WORD_OFFSET(%rbx), %rdi		/* move pointer to word in new WordEntry object into rdi */
 		movq %r13, %rsi					/* move pointer to string to be inserted into rsi */
 		call wc_str_copy				/* copy word to be inserted into new WordEntry object */
@@ -542,8 +540,12 @@ wc_dict_find_or_insert:
 		movq $0, %rdx
 		call wc_find_or_insert			/* call wc_find_or_insert to find or insert the WordEntry object */
 
-
-
+		/*  
+		// If a new node was inserted, update the buckets array element
+  		if (inserted) {
+    		buckets[index] = word;
+ 		 }
+  		return word; */
 
 	.Lreturn_dfi:
 		popq %rbx						/* restore callee-saved register */
